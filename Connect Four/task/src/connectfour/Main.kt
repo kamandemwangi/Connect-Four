@@ -1,5 +1,14 @@
 package connectfour
 
+import java.lang.NumberFormatException
+
+const val v = "║"
+const val l = "╚"
+const val h = "═"
+const val c = "╩"
+const val r = "╝"
+var k = 1
+var board: List<MutableList<Char>> = emptyList()
 fun main() {
     val regex = Regex("(\\d+)[xX](\\d+)")
     val boardRange = 5..9
@@ -17,6 +26,8 @@ fun main() {
         if (boardSize.isBlank()) {
             println("$firstPlayer VS $secondPlayer")
             println("6 X 7 board")
+            board = List(6) { MutableList(7) {' '} }
+            printBoard(6, 7)
             break
         }
         if (!regex.matches(boardSize)) {
@@ -38,6 +49,84 @@ fun main() {
 
         println("$firstPlayer VS $secondPlayer")
         println("$rows X $columns board")
+        board = List(rows) { MutableList(columns) {' '} }
+        printBoard(rows, columns)
         break
+    }
+    play(board, firstPlayer, secondPlayer)
+}
+
+fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: String) {
+    val boardRange = 1..board.size
+    var isFirstPlayerPlaying = true
+    var index = board.size
+    while (true) {
+        if (isFirstPlayerPlaying) println("$firstPlayer's turn:")
+        else println("$secondPlayer's turn:")
+
+        val input = readln()
+        if (input == "end"){
+            println("Game over!")
+            break
+        }
+        if (!input.isInt()) {
+            println("Incorrect column number")
+            continue
+        }
+        val column = input.toInt()
+        if (column !in boardRange) {
+            println("The column number is out of range (1 - ${board[0].size})")
+            continue
+        }
+        if (board[0][column] == 'o' || board[0][column] == '*') {
+            println("Column 1 is full")
+            continue
+        }
+        for (i in board) {
+            if (board[--index][column] == ' ') {
+                if (isFirstPlayerPlaying) {
+                    board[index][column] = 'o'
+                    isFirstPlayerPlaying = false
+                } else {
+                    board[index][column] = '*'
+                    isFirstPlayerPlaying = true
+                }
+                printBoard(board.size, board[0].size)
+                index = board.size
+                break
+            }
+        }
+    }
+
+}
+fun printBoard(rows: Int, columns: Int) {
+    var n = 0
+    var m = 0
+    val row = rows + 2
+    for (i in 1..row) {
+        for (j in 1..columns * 2) {
+            when (i) {
+                1 -> print(if (j % 2 == 0) k++ else " ")
+                row -> if (j == 1) print(l) else if (j == columns * 2) print("$h$r")
+                else if (j % 2 == 0) print(h) else print(c)
+                else -> print(if (j % 2 == 0) board[n][m] else v)
+            }
+            if (j % 2 > 0 && j != (columns * 2) - 1) m++
+        }
+        if (i > 1 && i != row){
+            n++
+            println(v)
+        } else println()
+        m = 0
+    }
+    k = 1
+}
+
+fun String.isInt(): Boolean {
+    return try {
+        this.toInt()
+        true
+    } catch (e: NumberFormatException) {
+        false
     }
 }

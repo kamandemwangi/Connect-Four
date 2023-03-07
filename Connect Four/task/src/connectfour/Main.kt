@@ -2,12 +2,17 @@ package connectfour
 
 import java.lang.NumberFormatException
 
+//printing game board start from 0,0
+//playing the game starts from
+//bottom to top => board.size - 1, 0
+
 const val v = "║"
 const val l = "╚"
 const val h = "═"
 const val c = "╩"
 const val r = "╝"
 var k = 1
+var moves = 0
 var board: List<MutableList<Char>> = emptyList()
 fun main() {
     val regex = Regex("(\\d+)[xX](\\d+)")
@@ -26,7 +31,7 @@ fun main() {
         if (boardSize.isBlank()) {
             println("$firstPlayer VS $secondPlayer")
             println("6 X 7 board")
-            board = List(6) { MutableList(7) {' '} }
+            board = List(6) { MutableList(7) { ' ' } }
             printBoard(6, 7)
             break
         }
@@ -49,7 +54,7 @@ fun main() {
 
         println("$firstPlayer VS $secondPlayer")
         println("$rows X $columns board")
-        board = List(rows) { MutableList(columns) {' '} }
+        board = List(rows) { MutableList(columns) { ' ' } }
         printBoard(rows, columns)
         break
     }
@@ -57,7 +62,7 @@ fun main() {
 }
 
 fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: String) {
-    val boardRange = 1..board.size
+    val boardRange = 1..board[0].size
     var isFirstPlayerPlaying = true
     var index = board.size
     while (true) {
@@ -65,7 +70,7 @@ fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: Stri
         else println("$secondPlayer's turn:")
 
         val input = readln()
-        if (input == "end"){
+        if (input == "end") {
             println("Game over!")
             break
         }
@@ -78,18 +83,22 @@ fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: Stri
             println("The column number is out of range (1 - ${board[0].size})")
             continue
         }
-        if (board[0][column] == 'o' || board[0][column] == '*') {
-            println("Column 1 is full")
+        //mutable lists are 0 index
+        val col = column - 1
+        if (board[0][col] == 'o' || board[0][col] == '*') {
+            println("Column $column is full")
             continue
         }
         for (i in board) {
-            if (board[--index][column] == ' ') {
+            if (board[--index][col] == ' ') {
                 if (isFirstPlayerPlaying) {
-                    board[index][column] = 'o'
+                    board[index][col] = 'o'
                     isFirstPlayerPlaying = false
+                    moves++
                 } else {
-                    board[index][column] = '*'
+                    board[index][col] = '*'
                     isFirstPlayerPlaying = true
+                    moves++
                 }
                 printBoard(board.size, board[0].size)
                 index = board.size
@@ -99,6 +108,7 @@ fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: Stri
     }
 
 }
+
 fun printBoard(rows: Int, columns: Int) {
     var n = 0
     var m = 0
@@ -109,11 +119,11 @@ fun printBoard(rows: Int, columns: Int) {
                 1 -> print(if (j % 2 == 0) k++ else " ")
                 row -> if (j == 1) print(l) else if (j == columns * 2) print("$h$r")
                 else if (j % 2 == 0) print(h) else print(c)
-                else -> print(if (j % 2 == 0) board[n][m] else v)
+
+                else -> print(if (j % 2 == 0) board[n][m++] else v)
             }
-            if (j % 2 > 0 && j != (columns * 2) - 1) m++
         }
-        if (i > 1 && i != row){
+        if (i > 1 && i != row) {
             n++
             println(v)
         } else println()

@@ -105,8 +105,83 @@ fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: Stri
                 break
             }
         }
+        if (moves == board.size * board[0].size) {
+            println("It is a draw\nGame over!")
+            break
+        }
+        if (winningConditions(board)) {
+            if (isFirstPlayerPlaying) {
+                println("Player $secondPlayer won\nGame over!")
+            } else println("Player $firstPlayer won\nGame over!")
+            break
+        }
     }
 
+}
+
+fun winningConditions(board: List<MutableList<Char>>): Boolean {
+    var count = 1
+    //horizontal
+    for (row in board) {
+        for (j in 0 until row.size - 1) {
+            val curr = row[j]
+            val next = row[j + 1]
+            if (count == 4) return true
+            if ((curr != ' ' && next != ' ' ) && curr == next) count++
+            else count = 1
+        }
+        count = 1
+    }
+
+    //vertical
+    for (i in board[0].indices) {
+        for (j in 0 until board.size - 1) {
+            val curr = board[j][i]
+            val next = board[j + 1][i]
+            if ((curr != ' ' && next != ' ' ) && curr == next) count++
+            else count = 1
+            if (count == 4) return true
+        }
+        count = 1
+    }
+
+    //diagonal
+    count = 0
+    for (i in board.indices) {
+        var n = i
+        for (j in board[0].indices) {
+            if (j >= board[0].size) continue
+            if (n >= board.size) continue
+            var prev: Char
+            val curr = board[n][j]
+            prev = if (j == 0) curr else board[n - 1][j - 1]
+            if ((prev != ' ' && curr != ' ') && curr == prev) count++
+            else if (prev == ' ' && curr != ' ') count++
+            else count = 0
+            if (count == 4) return true
+            n++
+        }
+        count = 0
+        n = i
+
+        for (j in board[0].size - 1 downTo 0) {
+            if (j >= board[0].size) continue
+            if (n >= board.size) continue
+            var prev: Char
+            val curr = board[n][j]
+            prev = when (j) {
+                board[0].size - 1 -> curr
+                else -> board[n - 1][j + 1]
+            }
+            if ((prev != ' ' && curr != ' ' ) && curr == prev) count++
+            else if (prev == ' ' && curr != ' ') count++
+            else count = 0
+            if (count == 4) return true
+            n++
+        }
+        count = 0
+    }
+    return false
 }
 
 fun printBoard(rows: Int, columns: Int) {

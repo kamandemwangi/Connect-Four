@@ -13,6 +13,10 @@ const val c = "╩"
 const val r = "╝"
 var k = 1
 var moves = 0
+var games = 0
+var immutableGamesNumber = 0
+var rounds = 1
+val map = HashMap<String, Int>()
 var board: List<MutableList<Char>> = emptyList()
 fun main() {
     val regex = Regex("(\\d+)[xX](\\d+)")
@@ -25,12 +29,19 @@ fun main() {
     println("Second player's name:")
     val secondPlayer = readln()
 
+    map[firstPlayer] = 0
+    map[secondPlayer] = 0
+
     while (true) {
         println("Set the board dimensions (Rows x Columns)\nPress Enter for default (6 x 7)")
         val boardSize = readln().trim().replace("\\s+".toRegex(), "")
         if (boardSize.isBlank()) {
-            println("$firstPlayer VS $secondPlayer")
-            println("6 X 7 board")
+            initializeGame(
+                    rows = 6,
+                    columns = 7,
+                    firstPlayer = firstPlayer,
+                    secondPlayer = secondPlayer
+            )
             board = List(6) { MutableList(7) { ' ' } }
             printBoard(6, 7)
             break
@@ -51,9 +62,12 @@ fun main() {
             println("Board columns should be from 5 to 9")
             continue
         }
-
-        println("$firstPlayer VS $secondPlayer")
-        println("$rows X $columns board")
+        initializeGame(
+                rows = rows,
+                columns = columns,
+                firstPlayer = firstPlayer,
+                secondPlayer = secondPlayer
+        )
         board = List(rows) { MutableList(columns) { ' ' } }
         printBoard(rows, columns)
         break
@@ -65,56 +79,87 @@ fun play(board: List<MutableList<Char>>, firstPlayer: String, secondPlayer: Stri
     val boardRange = 1..board[0].size
     var isFirstPlayerPlaying = true
     var index = board.size
-    while (true) {
-        if (isFirstPlayerPlaying) println("$firstPlayer's turn:")
-        else println("$secondPlayer's turn:")
 
-        val input = readln()
-        if (input == "end") {
-            println("Game over!")
-            break
-        }
-        if (!input.isInt()) {
-            println("Incorrect column number")
-            continue
-        }
-        val column = input.toInt()
-        if (column !in boardRange) {
-            println("The column number is out of range (1 - ${board[0].size})")
-            continue
-        }
-        //mutable lists are 0 index
-        val col = column - 1
-        if (board[0][col] == 'o' || board[0][col] == '*') {
-            println("Column $column is full")
-            continue
-        }
-        for (i in board) {
-            if (board[--index][col] == ' ') {
-                if (isFirstPlayerPlaying) {
-                    board[index][col] = 'o'
-                    isFirstPlayerPlaying = false
-                    moves++
-                } else {
-                    board[index][col] = '*'
-                    isFirstPlayerPlaying = true
-                    moves++
+    while (games > 0) {
+        while (true) {
+            if (isFirstPlayerPlaying) println("$firstPlayer's turn:")
+            else println("$secondPlayer's turn:")
+
+            val input = readln()
+            if (input == "end") {
+                println("Game over!")
+                return
+            }
+            if (!input.isInt()) {
+                println("Incorrect column number")
+                continue
+            }
+            val column = input.toInt()
+            if (column !in boardRange) {
+                println("The column number is out of range (1 - ${board[0].size})")
+                continue
+            }
+            //mutable lists are 0 index
+            val col = column - 1
+            if (board[0][col] == 'o' || board[0][col] == '*') {
+                println("Column $column is full")
+                continue
+            }
+            for (i in board) {
+                if (board[--index][col] == ' ') {
+                    if (isFirstPlayerPlaying) {
+                        board[index][col] = 'o'
+                        isFirstPlayerPlaying = false
+                        moves++
+                    } else {
+                        board[index][col] = '*'
+                        isFirstPlayerPlaying = true
+                        moves++
+                    }
+                    printBoard(board.size, board[0].size)
+                    index = board.size
+                    break
                 }
-                printBoard(board.size, board[0].size)
-                index = board.size
+            }
+            if (moves == board.size * board[0].size) {
+                if (immutableGamesNumber == 1) {
+                    println("It is a draw\n Game over!")
+                    return
+                }
+                draw(
+                        firstPlayer = firstPlayer,
+                        secondPlayer = secondPlayer
+                )
+                break
+            }
+            if (winningConditions(board)) {
+                if (isFirstPlayerPlaying) {
+                    if (immutableGamesNumber == 1) {
+                        println("Player $secondPlayer won")
+                        println("Game over!")
+                        return
+                    }
+                    win(
+                            player = secondPlayer,
+                            firstPlayer = firstPlayer,
+                            secondPlayer = secondPlayer
+                    )
+                } else {
+                    if (immutableGamesNumber == 1) {
+                        println("Player $firstPlayer won")
+                        println("Game over!")
+                        return
+                    }
+                    win(
+                            player = firstPlayer,
+                            firstPlayer = firstPlayer,
+                            secondPlayer = secondPlayer
+                    )
+                }
                 break
             }
         }
-        if (moves == board.size * board[0].size) {
-            println("It is a draw\nGame over!")
-            break
-        }
-        if (winningConditions(board)) {
-            if (isFirstPlayerPlaying) {
-                println("Player $secondPlayer won\nGame over!")
-            } else println("Player $firstPlayer won\nGame over!")
-            break
-        }
+        games--
     }
 
 }
@@ -126,9 +171,9 @@ fun winningConditions(board: List<MutableList<Char>>): Boolean {
         for (j in 0 until row.size - 1) {
             val curr = row[j]
             val next = row[j + 1]
-            if (count == 4) return true
             if ((curr != ' ' && next != ' ' ) && curr == next) count++
             else count = 1
+            if (count == 4) return true
         }
         count = 1
     }
@@ -213,5 +258,62 @@ fun String.isInt(): Boolean {
         true
     } catch (e: NumberFormatException) {
         false
+    }
+}
+
+fun win(player: String, firstPlayer: String, secondPlayer: String) {
+    val s = map[player]!!
+    map[player] = s + 2
+    println("Player $player won")
+    println("Score")
+    println("$firstPlayer: ${map[firstPlayer]} $secondPlayer: ${map[secondPlayer]}")
+
+    if (games > 1) {
+        println("Game #${++rounds}")
+        board.forEach { it.fill(' ') }
+        printBoard(board.size, board[0].size)
+        moves = 0
+    } else println("Game over!")
+
+}
+
+fun draw(firstPlayer: String, secondPlayer: String) {
+    map[firstPlayer] = map[firstPlayer]!! + 1
+    map[secondPlayer] = map[secondPlayer]!! + 1
+    println("It is a draw")
+    println("Score")
+    println("$firstPlayer: ${map[firstPlayer]} $secondPlayer: ${map[secondPlayer]}")
+
+    if (games > 1) {
+        println("Game #${++rounds}")
+        board.forEach { it.fill(' ') }
+        printBoard(board.size, board[0].size)
+        moves = 0
+    } else println("Game over!")
+}
+fun initializeGame(rows: Int, columns: Int, firstPlayer: String, secondPlayer: String) {
+    while (true) {
+        println("Do you want to play single or multiple games?\nFor a single game, input 1 or press Enter\nInput a number of games:")
+        val input = readln()
+        if (input.isBlank()){
+            games = 1
+            immutableGamesNumber = games
+            break
+        }
+        if (!input.isInt() || input.toInt() <= 0) {
+            println("Invalid input")
+        } else {
+            games = input.toInt()
+            immutableGamesNumber = games
+            break
+        }
+    }
+
+    println("$firstPlayer VS $secondPlayer")
+    println("$rows X $columns board")
+    if (games == 1) println("Single game")
+    else {
+        println("Total $games games")
+        println("Game #$rounds")
     }
 }
